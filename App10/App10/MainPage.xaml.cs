@@ -16,6 +16,8 @@ using System.Text;
 using Microsoft.Azure.Devices.Client;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using GrovePi.Sensors;
+using GrovePi;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -27,25 +29,47 @@ namespace App10
     public sealed partial class MainPage : Page
     {
 
+        IAirQualitySensor sensor2 = DeviceFactory.Build.AirQualitySensor(Pin.AnalogPin2);
         
+        ISoundSensor sensor = DeviceFactory.Build.SoundSensor(Pin.AnalogPin0);
 
         static DeviceClient deviceClient;
         static string iotHubUri = "Teest.azure-devices.net";
         static string deviceKey = "U2jMw+4VOZiqZWrMwRqRgr98LhNpZUkbeMnx+GsEkEE=";
 
-        private static async void SendDeviceToCloudMessagesAsync()
+        private async void SendDeviceToCloudMessagesAsync()
         {
-            double avgWindSpeed = 10; // m/s
-            Random rand = new Random();
 
             while (true)
             {
-                double currentWindSpeed = avgWindSpeed + rand.NextDouble() * 4 - 2;
+                string sensorvalue = "";
+                string sensorvalue2 = "";
+                try
+                {
+                    sensorvalue = sensor.SensorValue().ToString();
+                    sensorvalue2 = sensor.SensorValue().ToString();
+                    System.Diagnostics.Debug.WriteLine("Sound is " + sensorvalue);
+
+
+
+                }
+                catch (Exception ex)
+                {
+                    // NOTE: There are frequent exceptions of the following:
+                    // WinRT information: Unexpected number of bytes was transferred. Expected: '. Actual: '.
+                    // This appears to be caused by the rapid frequency of writes to the GPIO
+                    // These are being swallowed here/
+
+                    // If you want to see the exceptions uncomment the following:
+                    // System.Diagnostics.Debug.WriteLine(ex.ToString());
+                    
+                }
 
                 var telemetryDataPoint = new
                 {
                     deviceId = "testnorkart",
-                    windSpeed = currentWindSpeed
+                    sensSound = sensorvalue
+
                 };
                 var messageString = JsonConvert.SerializeObject(telemetryDataPoint);
                 var message = new Message(Encoding.ASCII.GetBytes(messageString));
@@ -53,17 +77,20 @@ namespace App10
                 await deviceClient.SendEventAsync(message);
             
 
-                Task.Delay(1000).Wait();
+                Task.Delay(10000).Wait();
             }
         }
 
-
+        
         public MainPage()
         {
             this.InitializeComponent();
             deviceClient = DeviceClient.Create(iotHubUri, new DeviceAuthenticationWithRegistrySymmetricKey("testnorkart", deviceKey));
 
             SendDeviceToCloudMessagesAsync();
+            
         }
     }
+
 }
+
