@@ -29,9 +29,14 @@ namespace App10
     public sealed partial class MainPage : Page
     {
 
-        IAirQualitySensor sensor2 = DeviceFactory.Build.AirQualitySensor(Pin.AnalogPin2);
-        
-        ISoundSensor sensor = DeviceFactory.Build.SoundSensor(Pin.AnalogPin0);
+     
+        IDHTTemperatureAndHumiditySensor sensor = DeviceFactory.Build.DHTTemperatureAndHumiditySensor(Pin.DigitalPin4, DHTModel.Dht11);
+
+        string sensorTemp = "";
+        string sensorHum = "";
+        string sensTemp = "";
+        string sensHum = "";
+
 
         static DeviceClient deviceClient;
         static string iotHubUri = "Teest.azure-devices.net";
@@ -42,14 +47,17 @@ namespace App10
 
             while (true)
             {
-                string sensorvalue = "";
-                string sensorvalue2 = "";
                 try
                 {
-                    sensorvalue = sensor.SensorValue().ToString();
-                    sensorvalue2 = sensor.SensorValue().ToString();
-                    System.Diagnostics.Debug.WriteLine("Sound is " + sensorvalue);
+                    // Check the value of the Sensor.
+                    // Temperature in Celsius is returned as a double type.  Convert it to string so we can print it.
+                    sensor.Measure();
+                    sensorTemp = sensor.TemperatureInCelsius.ToString();
+                    // Same for Humidity.  
+                    sensorHum = sensor.Humidity.ToString();
 
+                    // Print all of the values to the debug window.  
+                    System.Diagnostics.Debug.WriteLine("Temp is " + sensorTemp + " C.  And the Humidity is " + sensorHum + "%. ");
 
 
                 }
@@ -68,7 +76,8 @@ namespace App10
                 var telemetryDataPoint = new
                 {
                     deviceId = "testnorkart",
-                    sensSound = sensorvalue
+                    sensTemp = sensorTemp,
+                    sensHum = sensorHum
 
                 };
                 var messageString = JsonConvert.SerializeObject(telemetryDataPoint);
